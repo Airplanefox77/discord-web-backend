@@ -6,10 +6,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.API_KEY;
 
-app.use(cors());
+// ✅ Allow requests from your GitHub Pages site
+app.use(cors({
+  origin: 'https://airplanefox77.github.io'
+}));
+
 app.use(express.json());
 
-// Bot client setup
+// Discord Bot Setup
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -22,7 +26,7 @@ const client = new Client({
 let currentGuild = null;
 let currentChannel = null;
 
-// Middleware: Protect routes
+// Middleware: Secure routes with API key
 function auth(req, res, next) {
   const key = req.headers['authorization'];
   if (key !== API_KEY) {
@@ -31,7 +35,7 @@ function auth(req, res, next) {
   next();
 }
 
-// Route: Connect to guild
+// POST /connect
 app.post('/connect', auth, async (req, res) => {
   const { guildId } = req.body;
   try {
@@ -46,7 +50,7 @@ app.post('/connect', auth, async (req, res) => {
   }
 });
 
-// Route: Select channel
+// POST /select-channel
 app.post('/select-channel', auth, async (req, res) => {
   const { channelId } = req.body;
   try {
@@ -57,7 +61,7 @@ app.post('/select-channel', auth, async (req, res) => {
   }
 });
 
-// Route: Send plain message
+// POST /send
 app.post('/send', auth, async (req, res) => {
   const { message } = req.body;
   if (!currentChannel) return res.status(400).json({ error: 'No channel selected' });
@@ -69,7 +73,7 @@ app.post('/send', auth, async (req, res) => {
   }
 });
 
-// Route: Send embed
+// POST /embed
 app.post('/embed', auth, async (req, res) => {
   const { title, description, color, footer } = req.body;
   if (!currentChannel) return res.status(400).json({ error: 'No channel selected' });
@@ -90,12 +94,12 @@ app.post('/embed', auth, async (req, res) => {
   }
 });
 
-// Start app
+// Start server
 app.listen(PORT, () => {
   console.log(`✅ Backend listening on port ${PORT}`);
 });
 
-// Login bot
+// Log in to Discord
 client.once('ready', () => {
   console.log(`🤖 Logged in as ${client.user.tag}`);
 });
