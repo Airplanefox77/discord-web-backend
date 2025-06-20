@@ -6,14 +6,17 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.API_KEY;
 
-// ✅ Allow requests from your GitHub Pages site
+// ✅ CORS middleware — must come first
 app.use(cors({
-  origin: 'https://airplanefox77.github.io'
+  origin: 'https://airplanefox77.github.io',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Middleware
 app.use(express.json());
 
-// Discord Bot Setup
+// Discord bot setup
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -26,7 +29,7 @@ const client = new Client({
 let currentGuild = null;
 let currentChannel = null;
 
-// Middleware: Secure routes with API key
+// 🔐 Middleware to validate API Key
 function auth(req, res, next) {
   const key = req.headers['authorization'];
   if (key !== API_KEY) {
@@ -35,7 +38,7 @@ function auth(req, res, next) {
   next();
 }
 
-// POST /connect
+// Connect endpoint
 app.post('/connect', auth, async (req, res) => {
   const { guildId } = req.body;
   try {
@@ -50,7 +53,7 @@ app.post('/connect', auth, async (req, res) => {
   }
 });
 
-// POST /select-channel
+// Channel selection
 app.post('/select-channel', auth, async (req, res) => {
   const { channelId } = req.body;
   try {
@@ -61,7 +64,7 @@ app.post('/select-channel', auth, async (req, res) => {
   }
 });
 
-// POST /send
+// Send message
 app.post('/send', auth, async (req, res) => {
   const { message } = req.body;
   if (!currentChannel) return res.status(400).json({ error: 'No channel selected' });
@@ -73,7 +76,7 @@ app.post('/send', auth, async (req, res) => {
   }
 });
 
-// POST /embed
+// Send embed
 app.post('/embed', auth, async (req, res) => {
   const { title, description, color, footer } = req.body;
   if (!currentChannel) return res.status(400).json({ error: 'No channel selected' });
@@ -81,7 +84,7 @@ app.post('/embed', auth, async (req, res) => {
   const embed = new EmbedBuilder()
     .setTitle(title || 'Untitled')
     .setDescription(description || '')
-    .setColor(color || 0xA200FF)
+    .setColor(color || 0x00ffff)
     .setTimestamp();
 
   if (footer) embed.setFooter({ text: footer });
@@ -99,7 +102,6 @@ app.listen(PORT, () => {
   console.log(`✅ Backend listening on port ${PORT}`);
 });
 
-// Log in to Discord
 client.once('ready', () => {
   console.log(`🤖 Logged in as ${client.user.tag}`);
 });
